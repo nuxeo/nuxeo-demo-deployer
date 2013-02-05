@@ -1,7 +1,7 @@
 # nuxeo-demo-deployer
 
 Python based tooling to deploy demo instances of Nuxeo marketplace packages built
-on Jenkins CI.
+ on Jenkins CI
 
 # Install
 
@@ -14,10 +14,12 @@ on Jenkins CI.
 	$ export AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXXXXXXXXXX
 
 	$ python -m nxdd \
-	         --node-tag my_demo_box
-	         --application-name my_demo_app
-	         --region us-east-1
-	         --nuxeo-version 5.6.0
-	         --package my-marketplace-package-version.zip
-	         --database postgresql
+	         --instance-name my_demo_box \
+	         --image-id ami-895069fd \
+	         --region-name eu-west-1 \
+	         --instance-type m1.large \
+	         --application-name my_demo_app \
+	         --nuxeo-version 5.6.0 \
+	         --package my-marketplace-package-version.zip \
+	         --database postgresql \
 	         --user ubuntu
