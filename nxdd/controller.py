@@ -2,6 +2,7 @@
 from __future__ import print_function
 import sys
 import os
+from time import sleep
 
 from boto import ec2
 from boto.exception import EC2ResponseError
@@ -110,7 +111,7 @@ class Controller(object):
 
         reservation = self.conn.run_instances(
             image_id,
-            key_name=keypair_name,
+            key_name=self.keypair_name,
             instance_type=instance_type,
             security_groups=security_groups,
         )
@@ -155,7 +156,7 @@ class Controller(object):
             pflush("No running instance with name '%s', creating a new one..."
                   % instance_name)
 
-            instance = controller.create_instance(
+            instance = self.create_instance(
                 instance_name, image_id, instance_type, ports=ports)
 
             pflush("Started instance with name '%s' at %s" % (

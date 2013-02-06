@@ -102,10 +102,32 @@ def main(argv=sys.argv[1:]):
 	if options.keypair_name is None:
 		options.keypair_name = options.instance_name
 
+	# TODO: application_name should be an independent option in the future
+	options.application_name = options.instance_name
+
 	ctl = Controller(options.region_name, options.keypair_name,
-					 options.keys_folder, ssh_user=options.user)
+				 options.keys_folder, ssh_user=options.user)
 
+	ctl.connect(options.instance_name, options.image_id,
+				options.instance_type, ports=(22, 80, 443, 8080))
 
+	WORKING_DIR = '/home/%s/%s/' % (options.user, options.application_name)
+	ctl.cmd('sudo mkdir -p ' + WORKING_DIR)
+	ctl.cmd('sudo chown -R %s:%s %s'
+					% (options.user, options.user, WORKING_DIR))
+
+		# Upload packages if any
+	for package_local_path in options.packages:
+		package_filename = os.path.basename(package_local_path)
+		ctl.put(package_local_path, WORKING_DIR + package_filename)
+
+	# Setup the node by running a script
+	arguments = STANBOL_LAUNCHER_FILE + " " + SAMAR_PACKAGE_FILE
+	ctl.exec_script(join(DEPLOYMENT_FOLDER, 'setup_node.py'),
+	                       sudo=True, arguments=arguments)
+
+	print("Successfully deployed demo at: http://%s/" %
+	      ctl.instance.dns_name)
 	return 0
 
 if __name__ == "__main__":
