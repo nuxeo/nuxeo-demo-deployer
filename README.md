@@ -27,7 +27,7 @@ Simple example:
 
 Custom example:
 
-	$ python -m nxdd \
+	$ python -m nxdd.commandline \
 	         --instance-name my_demo \
 	         --image-id ami-895069fd \
 	         --region-name eu-west-1 \

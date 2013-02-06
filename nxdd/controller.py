@@ -1,5 +1,7 @@
 """Utilities to deploy"""
+from __future__ import print_function
 import sys
+import os
 
 from boto import ec2
 from boto.exception import EC2ResponseError
@@ -21,6 +23,7 @@ class Controller(object):
         # issue a dummy query to check the connection
         self.conn.get_all_instances()
 
+        keys_folder = os.path.expanduser(keys_folder)
         if not os.path.exists(keys_folder):
             os.makedirs(keys_folder)
 
@@ -82,7 +85,7 @@ class Controller(object):
 
     def create_instance(self, instance_name, image_id, instance_type,
                         security_groups=(), ports=(22, 80, 443)):
-
+		# TODO make it possible to spawn spot instances
         if not security_groups:
             # check whether there already exist a security group named after
             # the instance name

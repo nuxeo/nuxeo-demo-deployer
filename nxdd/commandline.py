@@ -2,7 +2,7 @@
 
 The following command should be parseable::
 
-	$ python -m nxdd \
+	$ python -m nxdd.commandline \
 	         --instance-name my_demo \
 	         --image-id ami-895069fd \
 	         --region-name eu-west-1 \
@@ -15,8 +15,11 @@ The following command should be parseable::
 	         --user ubuntu
 
 """
+from __future__ import print_function
 import sys
-from nxdd.comtroller import Controller
+import argparse
+
+from nxdd.controller import Controller
 
 # From http://cloud-images.ubuntu.com/desktop/precise/current/
 
@@ -40,7 +43,7 @@ def make_cli_parser():
         help="Name (tag) of the EC2 instance to reuse or create.",
         default=DEFAULT_INSTANCE_NAME,
     )
-    # TODO: add --application-name option to be able to deploy serveral
+    # TODO: add --application-name option to be able to deploy several
     # nuxeo instances
     parser.add_argument(
         "--image-id",
@@ -70,7 +73,7 @@ def make_cli_parser():
          	  " Typically /opt/build/aws-keys at Nuxeo."),
         default=DEFAULT_KEYS_FOLDER,
     )
-    # TODO: do not use the debian packages but instead make it possible
+	# TODO: do not use the debian packages but instead make it possible
     # to deploy from a raw zip distribution of nuxeo so as to make it
     # possible to run several Nuxeo demos with different versions and
     # DB / data folders with separate vhost configuations.
@@ -80,7 +83,7 @@ def make_cli_parser():
         default=DEFAULT_NUXEO_DISTRIBUTION,
     )
     parser.add_argument(
-        "--package", nargs="*", default=(), destination='packages',
+        "--package", nargs="*", default=(), dest='packages',
         help=("Market place package to install on the demo."),
     )
     parser.add_argument(
@@ -92,9 +95,21 @@ def make_cli_parser():
     return parser
 
 
-def main(argv=sys.argv):
+def main(argv=sys.argv[1:]):
 	parser = make_cli_parser()
 	options = parser.parse_args(argv)
+
+	if options.keypair_name is None:
+		options.keypair_name = options.instance_name
+
+	ctl = Controller(options.region_name, options.keypair_name,
+					 options.keys_folder, ssh_user=options.user)
+
+
+	return 0
+
+if __name__ == "__main__":
+	sys.exit(main())
 
 
 
