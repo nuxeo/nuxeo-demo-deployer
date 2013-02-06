@@ -1,8 +1,14 @@
 """Utilities to deploy"""
+import sys
 
 from boto import ec2
 from boto.exception import EC2ResponseError
-from nxdd.utils import pflush
+
+
+def pflush(*args, **kwargs):
+    """Flush stdout for making Jenkins able to monitor the progress live"""
+    print(*args, **kwargs)
+    sys.stdout.flush()
 
 
 class Controller(object):
