@@ -12,7 +12,9 @@ The following will install the module in the home folder of the current user
 from the source hosted on the master branch on github, along with the boto
 package (dependency to connect to EC2.
 
-    $ pip install -U --user -r https://raw.github.com/nuxeo/nuxeo-demo-deployer/master/requirements-master.txt
+    $ virtualenv nxdd-venv
+    $ . nxdd-venv/bin/activate
+    $ pip install -U -r https://raw.github.com/nuxeo/nuxeo-demo-deployer/master/requirements-master.txt
 
 # Usage
 
