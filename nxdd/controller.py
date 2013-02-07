@@ -239,19 +239,26 @@ class Controller(object):
         if code != 0:
             raise RuntimeError("Failed to send '%s' to '%s'" % (local, remote))
 
-    def exec_script(self, local, arguments=None, sudo=False):
+    def exec_script(self, local, arguments=None, sudo=False,
+                    working_directory=None):
         self.check_connected()
         script_name = os.path.basename(local)
-        self.put(local, script_name)
-        if sudo:
-            self.cmd('sudo chmod +x ' + script_name)
+        if working_directory is not None:
+            script_path = os.path.join(working_directory, script_name)
         else:
-            self.cmd('chmod +x ' + script_name)
+            script_path = script_name
+        self.put(local, script_path)
+        if sudo:
+            self.cmd('sudo chmod +x ' + script_path)
+        else:
+            self.cmd('chmod +x ' + script_path)
         cmd = "./%s" % script_name
         if sudo:
             cmd = "sudo " + cmd
         if arguments is not None:
             cmd += " " + arguments
+        if working_directory is not None:
+            cmd = "(cd %s && %s)" % (working_directory, cmd)
         self.cmd(cmd)
 
     def terminate(self, instance_name=None):

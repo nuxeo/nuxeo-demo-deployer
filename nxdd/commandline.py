@@ -107,6 +107,10 @@ def make_cli_parser():
         help=("Terminate the instance name."),
         default=False,
     )
+    parser.add_argument(
+        "--deployment-script",
+        help=("Custom deployment script to override the default."),
+    )
     return parser
 
 
@@ -138,14 +142,29 @@ def main(argv=sys.argv[1:]):
     ctl.cmd('sudo chown -R %s:%s %s'
                     % (options.user, options.user, WORKING_DIR))
 
-        # Upload packages if any
+    # Upload packages if any
+    package_filenames = []
     for package_local_path in options.packages:
         package_filename = os.path.basename(package_local_path)
+        package_filenames.append(package_filename)
         ctl.put(package_local_path, WORKING_DIR + package_filename)
 
     # Setup the node by running a script
-    # ctl.exec_script(join(DEPLOYMENT_FOLDER, 'setup_node.py'),
-    #                        sudo=True, arguments=arguments)
+    if options.deployment_script is not None:
+        deployment_script = options.deployment_script
+    else:
+        from nxdd import node_agent
+        # TODO: check that the module source file exists on the hard
+        # drive, if not fallback to inspect module to fetch the source
+        # code instead
+        deployment_script = node_agent.__file__
+
+        if deployment_script.endswith('.pyc'):
+            deployment_script = deployment_script[:-len('.pyc')] + '.py'
+
+    ctl.exec_script(deployment_script,
+                    sudo=True, arguments=" ".join(package_filenames),
+                    working_directory=WORKING_DIR)
     duration = time.time() - tick
     print("Successfully deployed demo at: http://%s/ in %dmin %ds" %
           (ctl.instance.dns_name, duration // 60, duration % 60))

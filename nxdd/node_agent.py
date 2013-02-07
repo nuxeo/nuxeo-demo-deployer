@@ -5,7 +5,6 @@ from __future__ import print_function
 import socket
 import sys
 import os
-import ConfigParser
 
 HOSTNAME = socket.gethostname()
 NUXEO_CONF = '/etc/nuxeo/nuxeo.conf'
@@ -50,7 +49,7 @@ NUXEO_VHOST = """\
 
 def cmd(command):
     """Fail early to make it easier to troubleshoot"""
-    pflush("%s> %s" % (HOSTNAME, command))
+    pflush("[%s]> %s" % (HOSTNAME, command))
     code = os.system(command)
     if code != 0:
         raise RuntimeError("Error executing: " + command)
@@ -143,7 +142,7 @@ def check_install_nuxeo(upgrade=False,
     cmd("export DEBIAN_FRONTEND=noninteractive; "
                 "apt-get install -y nuxeo")
 
-def setup_nuxeo(marketplace_package=None):
+def setup_nuxeo(marketplace_packages=()):
     pflush('Configuring Nuxeo server for the demo')
 
     # Skip wizard
@@ -171,13 +170,13 @@ def setup_nuxeo(marketplace_package=None):
     pflush('Deploying DAM')
     sudocmd(nuxeoctl + ' mp-install nuxeo-dam --accept true', user='nuxeo')
 
-    pflush('Deploying / upgrading marketplace package package')
-    sudocmd(nuxeoctl + ' mp-install --accept=true --nodeps file://'
-        + os.path.abspath(marketplace_package), user='nuxeo')
+    for package in marketplace_packages:
+        pflush('Deploying / upgrading marketplace package ' + package)
+        sudocmd(nuxeoctl + ' mp-install --accept=true --nodeps file://'
+            + os.path.abspath(package), user='nuxeo')
 
     # Restarting nuxeo
     cmd('service nuxeo start')
-
 
 def check_install_vhost():
     cmd("apt-get install -y apache2")
@@ -193,8 +192,6 @@ def check_install_vhost():
 
 
 if __name__ == "__main__":
-    os.chdir(WORKING_DIR)
     check_install_nuxeo()
-    setup_nuxeo(sys.argv[2])
+    setup_nuxeo(sys.argv[1:])
     check_install_vhost()
-
