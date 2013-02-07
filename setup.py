@@ -15,6 +15,7 @@ setup(
     license="BSD",
     url="http://github.com/nuxeo/nuxeo-demo-deployer",
     version=VERSION,
+    packages=['nxdd'],
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved',
