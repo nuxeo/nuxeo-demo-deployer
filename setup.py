@@ -5,7 +5,7 @@
 DESCRIPTION = """Python based tooling for deploying demo Nuxeo instances"""
 VERSION = '0.1.0'
 
-from numpy.distutils.core import setup
+from distutils.core import setup
 
 setup(
     name="nuxeo-demo-deployer",
