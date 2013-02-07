@@ -1,6 +1,6 @@
 """Parse the commandline or fallback to default options.
 
-The following command should be parseable::
+The following command should be admissible::
 
     $ python -m nxdd.commandline \
              --instance-name my_demo \
@@ -8,11 +8,12 @@ The following command should be parseable::
              --region-name eu-west-1 \
              --instance-type m1.large \
              --keypair-name my_demo \
-             --keys-folder /opt/build/aws-keys \
+             --keys-folder /opt/build/aws \
              --nuxeo-distribution 'precise releases' \
              --package /path/to/first-marketplace-package-version.zip \
              --package /path/to/second-marketplace-package-version.zip \
              --bid 0.1 \
+             --aws-credentials /opt/build/aws/aws-credentials.json \
              --user ubuntu
 
 """
@@ -21,6 +22,7 @@ import os
 import time
 import sys
 import argparse
+import json
 
 from nxdd.controller import Controller
 
@@ -31,7 +33,7 @@ DEFAULT_NUXEO_DISTRIBUTION = 'precise releases'  # Can be datebased or snapshots
 DEFAULT_IMAGE_ID = 'ami-1f8c8e6b'  # Ubuntu 12.04 64bits for eu-west-1
 DEFAULT_INSTANCE_TYPE = 'm1.large'
 DEFAULT_REGION_NAME = 'eu-west-1'
-DEFAULT_KEYS_FOLDER = '~/aws-keys'
+DEFAULT_KEYS_FOLDER = '~/aws'
 DEFAULT_USER = 'ubuntu'
 DEFAULT_BID = 0.1
 
@@ -111,6 +113,10 @@ def make_cli_parser():
         "--deployment-script",
         help=("Custom deployment script to override the default."),
     )
+    parser.add_argument(
+        "--aws-credentials",
+        help="JSON file holding AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY."
+    )
     return parser
 
 
@@ -126,8 +132,22 @@ def main(argv=sys.argv[1:]):
     # TODO: application_name should be an independent option in the future
     options.application_name = options.instance_name
 
+    if options.aws_credentials is not None:
+        with open(os.path.expanduser(options.aws_credentials), 'rb') as f:
+            aws_credentials = json.load(f)
+        # Ensure the parameters are lowercase
+        aws_credentials = dict((k.lower(), v)
+                               for k, v in aws_credentials.items())
+        print("Loading AWS parameters from disk: "
+              + ", ".join(aws_credentials.keys()))
+    else:
+        # Use the environment variable
+        print("Using environment variables for AWS credentials.")
+        aws_credentials = {}
+
     ctl = Controller(options.region_name, options.keypair_name,
-                     options.keys_folder, ssh_user=options.user)
+                     options.keys_folder, ssh_user=options.user,
+                     **aws_credentials)
 
     if options.terminate:
         ctl.terminate(options.instance_name)

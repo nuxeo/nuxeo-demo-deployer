@@ -21,6 +21,8 @@ Setup your AWS credentials in environment variables:
     $ export AWS_ACCESS_KEY_ID=XXXXXXXXX
     $ export AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXXXXXXXXXX
 
+or alternatively put the credentials in a shared file
+
 Simple example:
 
     $ python -m nxdd \
@@ -28,7 +30,7 @@ Simple example:
              --key-folder /opt/build/aws-keys \
              --package /path/to/my-marketplace-package-version.zip
 
-Custom example:
+Example with advanced parameters:
 
     $ python -m nxdd.commandline \
              --instance-name my_demo \
@@ -36,11 +38,14 @@ Custom example:
              --region-name eu-west-1 \
              --instance-type m1.large \
              --keypair-name my_demo \
-             --key-folder /opt/build/aws-keys \
+             --keys-folder /opt/build/aws \
              --nuxeo-distribution 'precise releases' \
              --package /path/to/first-marketplace-package-version.zip \
              --package /path/to/second-marketplace-package-version.zip \
+             --bid 0.1 \
+             --aws-credentials /opt/build/aws/aws-credentials.json \
              --user ubuntu
+
 
 # Developers
 
