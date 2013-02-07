@@ -2,20 +2,22 @@
 
 The following command should be parseable::
 
-	$ python -m nxdd.commandline \
-	         --instance-name my_demo \
-	         --image-id ami-895069fd \
-	         --region-name eu-west-1 \
-	         --instance-type m1.large \
-	         --keypair-name my_demo \
-	         --keys-folder /opt/build/aws-keys \
-	         --nuxeo-distribution 'precise releases' \
-	         --package /path/to/first-marketplace-package-version.zip \
+    $ python -m nxdd.commandline \
+             --instance-name my_demo \
+             --image-id ami-895069fd \
+             --region-name eu-west-1 \
+             --instance-type m1.large \
+             --keypair-name my_demo \
+             --keys-folder /opt/build/aws-keys \
+             --nuxeo-distribution 'precise releases' \
+             --package /path/to/first-marketplace-package-version.zip \
              --package /path/to/second-marketplace-package-version.zip \
-	         --user ubuntu
+             --bid 0.1 \
+             --user ubuntu
 
 """
 from __future__ import print_function
+import os
 import sys
 import argparse
 
@@ -30,6 +32,7 @@ DEFAULT_INSTANCE_TYPE = 'm1.large'
 DEFAULT_REGION_NAME = 'eu-west-1'
 DEFAULT_KEYS_FOLDER = '~/aws-keys'
 DEFAULT_USER = 'ubuntu'
+DEFAULT_BID = 0.1
 
 
 def make_cli_parser():
@@ -48,7 +51,7 @@ def make_cli_parser():
     parser.add_argument(
         "--image-id",
         help=("AMI to use if a new instance is created. "
-        	  "Need to agree with region-name."),
+              "Need to agree with region-name."),
         default=DEFAULT_IMAGE_ID,
     )
     parser.add_argument(
@@ -64,16 +67,16 @@ def make_cli_parser():
     parser.add_argument(
         "--keypair-name",
         help=("SSH keypair to connect to the instance. Automatically "
-        	  "set to instance-name by default."),
+              "set to instance-name by default."),
     )
     parser.add_argument(
         "--keys-folder",
         help=("Local folder to store the private keys. Needs to be "
-         	  "shared by all Jenkins CI slave running this script. "
-         	  " Typically /opt/build/aws-keys at Nuxeo."),
+               "shared by all Jenkins CI slave running this script. "
+               " Typically /opt/build/aws-keys at Nuxeo."),
         default=DEFAULT_KEYS_FOLDER,
     )
-	# TODO: do not use the debian packages but instead make it possible
+    # TODO: do not use the debian packages but instead make it possible
     # to deploy from a raw zip distribution of nuxeo so as to make it
     # possible to run several Nuxeo demos with different versions and
     # DB / data folders with separate vhost configuations.
@@ -89,49 +92,64 @@ def make_cli_parser():
     parser.add_argument(
         "--user",
         help=("UNIX user to used to deploy the demo. "
-        	  "Requires sudoer's rights."),
+              "Requires sudoer's rights."),
         default=DEFAULT_USER,
+    )
+    parser.add_argument(
+        "--bid", type=float,
+        help=("Bid price for Spot Instance requests provisioning. "
+              "Set to 0 or -1 to use regular on demand provisioning."),
+        default=DEFAULT_BID,
+    )
+    parser.add_argument(
+        "--terminate", action="store_true",
+        help=("Terminate the instance name."),
+        default=False,
     )
     return parser
 
 
 def main(argv=sys.argv[1:]):
-	parser = make_cli_parser()
-	options = parser.parse_args(argv)
+    parser = make_cli_parser()
+    options = parser.parse_args(argv)
 
-	if options.keypair_name is None:
-		options.keypair_name = options.instance_name
+    if options.keypair_name is None and not options.terminate:
+        options.keypair_name = options.instance_name
 
-	# TODO: application_name should be an independent option in the future
-	options.application_name = options.instance_name
+    # TODO: application_name should be an independent option in the future
+    options.application_name = options.instance_name
 
-	ctl = Controller(options.region_name, options.keypair_name,
-				 options.keys_folder, ssh_user=options.user)
+    ctl = Controller(options.region_name, options.keypair_name,
+                     options.keys_folder, ssh_user=options.user)
 
-	ctl.connect(options.instance_name, options.image_id,
-				options.instance_type, ports=(22, 80, 443, 8080))
+    if options.terminate:
+        ctl.terminate(options.instance_name)
+        return 0
 
-	WORKING_DIR = '/home/%s/%s/' % (options.user, options.application_name)
-	ctl.cmd('sudo mkdir -p ' + WORKING_DIR)
-	ctl.cmd('sudo chown -R %s:%s %s'
-					% (options.user, options.user, WORKING_DIR))
+    ctl.connect(options.instance_name, options.image_id,
+                options.instance_type, ports=(22, 80, 443, 8080),
+                bid_price=options.bid)
 
-		# Upload packages if any
-	for package_local_path in options.packages:
-		package_filename = os.path.basename(package_local_path)
-		ctl.put(package_local_path, WORKING_DIR + package_filename)
+    WORKING_DIR = '/home/%s/%s/' % (options.user, options.application_name)
+    ctl.cmd('sudo mkdir -p ' + WORKING_DIR)
+    ctl.cmd('sudo chown -R %s:%s %s'
+                    % (options.user, options.user, WORKING_DIR))
 
-	# Setup the node by running a script
-	arguments = STANBOL_LAUNCHER_FILE + " " + SAMAR_PACKAGE_FILE
-	ctl.exec_script(join(DEPLOYMENT_FOLDER, 'setup_node.py'),
-	                       sudo=True, arguments=arguments)
+        # Upload packages if any
+    for package_local_path in options.packages:
+        package_filename = os.path.basename(package_local_path)
+        ctl.put(package_local_path, WORKING_DIR + package_filename)
 
-	print("Successfully deployed demo at: http://%s/" %
-	      ctl.instance.dns_name)
-	return 0
+    # Setup the node by running a script
+    # ctl.exec_script(join(DEPLOYMENT_FOLDER, 'setup_node.py'),
+    #                        sudo=True, arguments=arguments)
+
+    print("Successfully deployed demo at: http://%s/" %
+          ctl.instance.dns_name)
+    return 0
 
 if __name__ == "__main__":
-	sys.exit(main())
+    sys.exit(main())
 
 
 

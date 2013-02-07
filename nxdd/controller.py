@@ -17,13 +17,20 @@ def pflush(*args, **kwargs):
 class Controller(object):
     """Utility class to control the cloud nodes"""
 
-    def __init__(self, region, keypair_name, keys_folder, ssh_user='ubuntu',
+    def __init__(self, region, keypair_name=None, keys_folder=None, ssh_user='ubuntu',
                  **ec2_params):
         self.conn = ec2.connect_to_region(region, **ec2_params)
 
         # issue a dummy query to check the connection
         self.conn.get_all_instances()
 
+        self.ssh_user = ssh_user
+        if keypair_name is not None:
+            self.setup_keypair(keypair_name, keys_folder)
+
+    def setup_keypair(self, keypair_name, keys_folder):
+        if keys_folder is None:
+            raise ValueError('Missing keys_folder argument.')
         keys_folder = os.path.expanduser(keys_folder)
         if not os.path.exists(keys_folder):
             os.makedirs(keys_folder)
@@ -59,13 +66,10 @@ class Controller(object):
             kp.save(keys_folder)
             pflush('Saved key file:', self.key_file)
 
-        self.ssh_user = ssh_user
-
     def get_connection(self):
         return self.conn
 
     def get_running_instance(self, instance_name):
-
         instances = []
         for r in self.conn.get_all_instances():
             for i in r.instances:
@@ -85,8 +89,9 @@ class Controller(object):
         return instances[0]
 
     def create_instance(self, instance_name, image_id, instance_type,
-                        security_groups=(), ports=(22, 80, 443)):
-		# TODO make it possible to spawn spot instances
+                        security_groups=(), ports=(22, 80, 443),
+                        bid_price=None):
+        # TODO make it possible to spawn spot instances
         if not security_groups:
             # check whether there already exist a security group named after
             # the instance name
@@ -109,13 +114,48 @@ class Controller(object):
 
             security_groups = [instance_name]
 
-        reservation = self.conn.run_instances(
-            image_id,
-            key_name=self.keypair_name,
-            instance_type=instance_type,
-            security_groups=security_groups,
-        )
-        assert len(reservation.instances) == 1
+        reservation = None
+
+        if bid_price is None or bid_price <= 0:
+            # Traditional instance provisioning
+            reservation = self.conn.run_instances(
+                image_id,
+                key_name=self.keypair_name,
+                instance_type=instance_type,
+                security_groups=security_groups,
+            )
+        else:
+            # Provisioning using the Spot Instance market
+            spot_requests = self.conn.request_spot_instances(
+                0.1, image_id,
+                key_name=self.keypair_name,
+                instance_type=instance_type,
+                security_groups=security_groups)
+            spot_request = spot_requests[0]
+            spot_request.add_tag('Name', instance_name)
+
+            # Wait for the spot requests to come up
+            delay = 20
+            for i in range(30):
+                # Refresh the status of the spot request
+                spot_request = self.conn.get_all_spot_instance_requests(
+                    [spot_request.id])[0]
+
+                if spot_request.state == 'open':
+                    pflush('Waiting %ds for Spot Instance request to be '
+                           'fulfilled.' % delay)
+                    sleep(delay)
+                    continue
+
+                elif spot_request.state == 'active':
+                    reservation = self.conn.get_all_instances(
+                        [spot_request.instance_id])[0]
+
+            if reservation is None:
+                spot_request.cancel()
+                raise RuntimeError("Failed to provision spot instances for "
+                                   + instance_name)
+
         instance = reservation.instances[0]
         # wait a bit before creating the tag otherwise it might be impossible
         # to fetch the status of the instance (AWS bug?).
@@ -145,7 +185,7 @@ class Controller(object):
         raise RuntimeError('Failed to connect via ssh')
 
     def connect(self, instance_name, image_id, instance_type,
-                security_groups=(), ports=(22, 80, 443)):
+                security_groups=(), ports=(22, 80, 443), bid_price=None):
         """Connect the crontroller to the remote node, create it if missing"""
         instance = self.get_running_instance(instance_name)
 
@@ -157,7 +197,9 @@ class Controller(object):
                   % instance_name)
 
             instance = self.create_instance(
-                instance_name, image_id, instance_type, ports=ports)
+                instance_name, image_id, instance_type,
+                security_groups=security_groups, ports=ports,
+                bid_price=bid_price)
 
             pflush("Started instance with name '%s' at %s" % (
                 instance_name, instance.dns_name))
@@ -214,6 +256,15 @@ class Controller(object):
 
     def terminate(self, instance_name=None):
         """Terminate the running instance"""
+        # Cancel any running spot instance request
+        spot_requests = self.conn.get_all_spot_instance_requests()
+        if instance_name is not None:
+            spot_requests = [sr for sr in spot_requests
+                             if sr.tags.get('Name') == instance_name]
+        for sr in spot_requests:
+            pflush('Cancelling spot request ' + sr.id)
+            sr.cancel()
+
         if instance_name is None:
             self.check_connected()
             instance = self.instance
