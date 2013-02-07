@@ -18,6 +18,7 @@ The following command should be parseable::
 """
 from __future__ import print_function
 import os
+import time
 import sys
 import argparse
 
@@ -113,6 +114,8 @@ def main(argv=sys.argv[1:]):
     parser = make_cli_parser()
     options = parser.parse_args(argv)
 
+    tick = time.time()
+
     if options.keypair_name is None and not options.terminate:
         options.keypair_name = options.instance_name
 
@@ -143,9 +146,9 @@ def main(argv=sys.argv[1:]):
     # Setup the node by running a script
     # ctl.exec_script(join(DEPLOYMENT_FOLDER, 'setup_node.py'),
     #                        sudo=True, arguments=arguments)
-
-    print("Successfully deployed demo at: http://%s/" %
-          ctl.instance.dns_name)
+    duration = time.time() - tick
+    print("Successfully deployed demo at: http://%s/ in %dmin %ds" %
+          (ctl.instance.dns_name, duration // 60, duration % 60))
     return 0
 
 if __name__ == "__main__":
