@@ -4,38 +4,50 @@ Python based tooling to deploy demo instances of Nuxeo marketplace packages buil
 on Jenkins CI
 
 Installs a Nuxeo Server using the Ubuntu package from
-http://apt.nuxeo.org/dists/precise/	using PostgreSQL and upload a 
+http://apt.nuxeo.org/dists/precise/ using PostgreSQL and upload markeplace packages.
 
 # Install
 
-	pip install -r requirements.txt
-	pip install .
+The following will install the module in the home folder of the current user
+from the source hosted on the master branch on github, along with the boto
+package (dependency to connect to EC2.
+
+    $ pip install -U --user -r https://raw.github.com/nuxeo/nuxeo-demo-deployer/master/requirements-master.txt
 
 # Usage
 
 Setup your AWS credentials in environment variables:
 
-	$ export AWS_ACCESS_KEY_ID=XXXXXXXXX
-	$ export AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXXXXXXXXXX
+    $ export AWS_ACCESS_KEY_ID=XXXXXXXXX
+    $ export AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXXXXXXXXXX
 
 Simple example:
 
-	$ python -m nxdd \
-	         --instance-name my_demo \
-	         --key-folder /opt/build \
-	         --package /path/to/my-marketplace-package-version.zip
+    $ python -m nxdd \
+             --instance-name my_demo \
+             --key-folder /opt/build/aws-keys \
+             --package /path/to/my-marketplace-package-version.zip
 
 Custom example:
 
-	$ python -m nxdd.commandline \
-	         --instance-name my_demo \
-	         --image-id ami-895069fd \
-	         --region-name eu-west-1 \
-	         --instance-type m1.large \
-	         --keypair-name my_demo \
-	         --key-folder /opt/build \
-	         --nuxeo-distribution 'precise releases' \
-	         --package /path/to/first-marketplace-package-version.zip \
+    $ python -m nxdd.commandline \
+             --instance-name my_demo \
+             --image-id ami-895069fd \
+             --region-name eu-west-1 \
+             --instance-type m1.large \
+             --keypair-name my_demo \
+             --key-folder /opt/build/aws-keys \
+             --nuxeo-distribution 'precise releases' \
+             --package /path/to/first-marketplace-package-version.zip \
              --package /path/to/second-marketplace-package-version.zip \
-	         --user ubuntu
+             --user ubuntu
 
+# Developers
+
+To install the development version (git clone source folder) on your system,
+use the following instead:
+
+    $ git clone https://github.com/nuxeo/nuxeo-demo-deployer.git
+    $ cd nuxeo-demo-deployer
+    $ pip install -r requirements.txt
+    $ pip install -e .

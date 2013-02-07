@@ -1,0 +1,3 @@
+# pip requirement files to install the master branch of the demo deployer tool
+boto
+https://github.com/nuxeo/nuxeo-demo-deployer/zipball/master
