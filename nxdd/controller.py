@@ -142,8 +142,9 @@ class Controller(object):
                     [spot_request.id])[0]
 
                 if spot_request.state == 'open':
-                    pflush('Waiting %ds for Spot Instance request to be '
-                           'fulfilled.' % delay)
+                    pflush('Waiting %ds for Spot Instance request at '
+                           'price %0.3f to be fulfilled.'
+                            % (delay, bid_price))
                     sleep(delay)
                     continue
 
