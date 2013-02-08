@@ -142,7 +142,7 @@ def check_install_nuxeo(upgrade=False,
     cmd("export DEBIAN_FRONTEND=noninteractive; "
                 "apt-get install -y nuxeo")
 
-def setup_nuxeo(marketplace_packages=(), hotfix=True, purge=False):
+def setup_nuxeo(marketplace_packages=(), hotfix=True):
     pflush('Configuring Nuxeo server for the demo')
 
     # Skip wizard
@@ -166,19 +166,20 @@ def setup_nuxeo(marketplace_packages=(), hotfix=True, purge=False):
         sudocmd(nuxeoctl + ' mp-purge --accept true', user='nuxeo')
 
     sudocmd(nuxeoctl + ' mp-init', user='nuxeo')
+    sudocmd(nuxeoctl + ' mp-update', user='nuxeo')
 
     pflush('Deploying DM')
     sudocmd(nuxeoctl + ' mp-install nuxeo-dm --accept true', user='nuxeo')
     pflush('Deploying DAM')
     sudocmd(nuxeoctl + ' mp-install nuxeo-dam --accept true', user='nuxeo')
 
-    if hotfix:
-        # This requires manual connect registration for now
-        sudocmd(nuxeoctl + ' mp-hotfix', user='nuxeo')
+
+    # This requires manual connect registration for now
+    sudocmd(nuxeoctl + ' mp-hotfix --accept=true', user='nuxeo')
 
     for package in marketplace_packages:
         pflush('Deploying / upgrading marketplace package ' + package)
-        sudocmd(nuxeoctl + ' mp-install --accept=true --nodeps file://'
+        sudocmd(nuxeoctl + ' mp-install --accept=true file://'
             + os.path.abspath(package), user='nuxeo')
 
     # Restarting nuxeo
