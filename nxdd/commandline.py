@@ -175,7 +175,7 @@ def main(argv=sys.argv[1:]):
 
     # Deploy Nuxeo Connect instance credentials
     if options.instance_clid is not None:
-        ctl.put(package_local_path, WORKING_DIR + 'instance.clid')
+        ctl.put(options.instance_clid, WORKING_DIR + 'instance.clid')
 
     # Setup the node by running a script
     if options.deployment_script is not None:
