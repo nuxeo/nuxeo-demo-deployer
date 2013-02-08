@@ -117,6 +117,7 @@ class Controller(object):
         reservation = None
 
         if bid_price is None or bid_price <= 0:
+            pflush('Provisioning On Demand Instance %s.' % instance_type)
             # Traditional instance provisioning
             reservation = self.conn.run_instances(
                 image_id,
@@ -138,13 +139,14 @@ class Controller(object):
             delay = 20
             for i in range(30):
                 # Refresh the status of the spot request
+                pflush('Provisioning Spot Instance %s at price $%0.3f.'
+                        % (instance_type, bid_price))
                 spot_request = self.conn.get_all_spot_instance_requests(
                     [spot_request.id])[0]
 
                 if spot_request.state == 'open':
-                    pflush('Waiting %ds for Spot Instance request at '
-                           'price %0.3f to be fulfilled.'
-                            % (delay, bid_price))
+                    pflush('Waiting %ds for Spot Instance request '
+                           'to be fulfilled.' % delay)
                     sleep(delay)
                     continue
 

@@ -38,13 +38,13 @@ Example with advanced parameters:
              --instance-name my_demo \
              --image-id ami-895069fd \
              --region-name eu-west-1 \
-             --instance-type m1.large \
+             --instance-type m1.medium \
              --keypair-name my_demo \
              --keys-folder /opt/build/aws \
              --nuxeo-distribution 'precise releases' \
              --package /path/to/first-marketplace-package-version.zip \
              --package /path/to/second-marketplace-package-version.zip \
-             --bid 0.1 \
+             --bid 0.3 \
              --aws-credentials /opt/build/aws/aws-credentials.json \
              --user ubuntu
 

@@ -162,9 +162,8 @@ def setup_nuxeo(marketplace_packages=(), hotfix=True):
     # wizard
     nuxeoctl = NUXEO_HOME + '/bin/nuxeoctl'
 
-    if purge:
-        pflush('Full purge of existing marketplace packages')
-        sudocmd(nuxeoctl + ' mp-purge --accept true', user='nuxeo')
+    pflush('Full purge of existing marketplace packages')
+    sudocmd(nuxeoctl + ' mp-purge --accept true', user='nuxeo')
 
     if os.path.exists('instance.clid'):
         # Deploy the Nuxeo Connect credentials to get the hotfixes
@@ -183,7 +182,8 @@ def setup_nuxeo(marketplace_packages=(), hotfix=True):
     sudocmd(nuxeoctl + ' mp-install nuxeo-dam --accept true', user='nuxeo')
 
     # This requires manual connect registration for now
-    sudocmd(nuxeoctl + ' mp-hotfix --accept=true', user='nuxeo')
+    if hotfix:
+        sudocmd(nuxeoctl + ' mp-hotfix --accept=true', user='nuxeo')
 
     # Deploy marketplace packages directly sent by the controller
     for package in marketplace_packages:

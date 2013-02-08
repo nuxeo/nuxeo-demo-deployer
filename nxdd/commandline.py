@@ -6,13 +6,13 @@ The following command should be admissible::
              --instance-name my_demo \
              --image-id ami-895069fd \
              --region-name eu-west-1 \
-             --instance-type m1.large \
+             --instance-type m1.medium \
              --keypair-name my_demo \
              --keys-folder /opt/build/aws \
              --nuxeo-distribution 'precise releases' \
              --package /path/to/first-marketplace-package-version.zip \
              --package /path/to/second-marketplace-package-version.zip \
-             --bid 0.1 \
+             --bid 0.3 \
              --aws-credentials /opt/build/aws/aws-credentials.json \
              --user ubuntu
 
@@ -31,7 +31,7 @@ from nxdd.controller import Controller
 DEFAULT_INSTANCE_NAME = 'nuxeo_demo'
 DEFAULT_NUXEO_DISTRIBUTION = 'precise releases'  # Can be datebased or snapshots
 DEFAULT_IMAGE_ID = 'ami-1f8c8e6b'  # Ubuntu 12.04 64bits for eu-west-1
-DEFAULT_INSTANCE_TYPE = 'm1.large'
+DEFAULT_INSTANCE_TYPE = 'm1.medium'
 DEFAULT_REGION_NAME = 'eu-west-1'
 DEFAULT_KEYS_FOLDER = '~/aws'
 DEFAULT_USER = 'ubuntu'
