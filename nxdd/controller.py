@@ -127,7 +127,7 @@ class Controller(object):
         else:
             # Provisioning using the Spot Instance market
             spot_requests = self.conn.request_spot_instances(
-                0.1, image_id,
+                bid_price, image_id,
                 key_name=self.keypair_name,
                 instance_type=instance_type,
                 security_groups=security_groups)
