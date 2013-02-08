@@ -142,7 +142,7 @@ def check_install_nuxeo(upgrade=False,
     cmd("export DEBIAN_FRONTEND=noninteractive; "
                 "apt-get install -y nuxeo")
 
-def setup_nuxeo(marketplace_packages=(), hotfix=True):
+def setup_nuxeo(marketplace_packages=(), hotfix=True, purge=False):
     pflush('Configuring Nuxeo server for the demo')
 
     # Skip wizard
@@ -161,8 +161,10 @@ def setup_nuxeo(marketplace_packages=(), hotfix=True):
     # wizard
     nuxeoctl = NUXEO_HOME + '/bin/nuxeoctl'
 
-    pflush('Full purge of existing marketplace packages')
-    sudocmd(nuxeoctl + ' mp-purge --accept true', user='nuxeo')
+    if purge:
+        pflush('Full purge of existing marketplace packages')
+        sudocmd(nuxeoctl + ' mp-purge --accept true', user='nuxeo')
+
     sudocmd(nuxeoctl + ' mp-init', user='nuxeo')
 
     pflush('Deploying DM')
