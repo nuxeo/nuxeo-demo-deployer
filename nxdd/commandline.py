@@ -117,6 +117,10 @@ def make_cli_parser():
         "--aws-credentials",
         help="JSON file holding AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY."
     )
+    parser.add_argument(
+        "--instance-clid",
+        help="instance.clid file to connect the server to Nuxeo Connect."
+    )
     return parser
 
 
@@ -168,6 +172,10 @@ def main(argv=sys.argv[1:]):
         package_filename = os.path.basename(package_local_path)
         package_filenames.append(package_filename)
         ctl.put(package_local_path, WORKING_DIR + package_filename)
+
+    # Deploy Nuxeo Connect instance credentials
+    if options.instance_clid is not None:
+        ctl.put(package_local_path, WORKING_DIR + 'instance.clid')
 
     # Setup the node by running a script
     if options.deployment_script is not None:

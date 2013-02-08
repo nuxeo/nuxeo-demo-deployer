@@ -8,6 +8,7 @@ import os
 
 HOSTNAME = socket.gethostname()
 NUXEO_CONF = '/etc/nuxeo/nuxeo.conf'
+NUXEO_DATA = '/var/lib/nuxeo/data'
 NUXEO_HOME = '/var/lib/nuxeo/server'
 NUXEO_CONFIG_DIR = NUXEO_HOME + '/nxserver/config'
 
@@ -165,20 +166,28 @@ def setup_nuxeo(marketplace_packages=(), hotfix=True):
         pflush('Full purge of existing marketplace packages')
         sudocmd(nuxeoctl + ' mp-purge --accept true', user='nuxeo')
 
+    if os.path.exists('instance.clid'):
+        # Deploy the Nuxeo Connect credentials to get the hotfixes
+        sudocmd('cp instance.clid ' + NUXEO_DATA, user='nuxeo')
+
+    # Make it possible to deploy the bundled local packages
     sudocmd(nuxeoctl + ' mp-init', user='nuxeo')
+
+    # Refresh the list of packages available from Nuxeo Connect
     sudocmd(nuxeoctl + ' mp-update', user='nuxeo')
 
+    # TODO: make the following configurable
     pflush('Deploying DM')
     sudocmd(nuxeoctl + ' mp-install nuxeo-dm --accept true', user='nuxeo')
     pflush('Deploying DAM')
     sudocmd(nuxeoctl + ' mp-install nuxeo-dam --accept true', user='nuxeo')
 
-
     # This requires manual connect registration for now
     sudocmd(nuxeoctl + ' mp-hotfix --accept=true', user='nuxeo')
 
+    # Deploy marketplace packages directly sent by the controller
     for package in marketplace_packages:
-        pflush('Deploying / upgrading marketplace package ' + package)
+        pflush('Installing custom marketplace package ' + package)
         sudocmd(nuxeoctl + ' mp-install --accept=true file://'
             + os.path.abspath(package), user='nuxeo')
 
