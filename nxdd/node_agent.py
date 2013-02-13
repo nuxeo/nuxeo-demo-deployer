@@ -211,7 +211,8 @@ def check_install_vhost(**ignored):
 
 
 if __name__ == "__main__":
-    parameters = json.load(sys.argv[1])
+    with open(sys.argv[1], 'rb') as f:
+        parameters = json.load(f)
     check_install_nuxeo(**parameters)
     setup_nuxeo(**parameters)
     check_install_vhost(**parameters)
