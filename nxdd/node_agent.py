@@ -175,21 +175,22 @@ def setup_nuxeo(marketplace_packages=(), hotfix=True):
     # Refresh the list of packages available from Nuxeo Connect
     sudocmd(nuxeoctl + ' mp-update', user='nuxeo')
 
-    # TODO: make the following configurable
-    pflush('Deploying DM')
-    sudocmd(nuxeoctl + ' mp-install nuxeo-dm --accept true', user='nuxeo')
-    pflush('Deploying DAM')
-    sudocmd(nuxeoctl + ' mp-install nuxeo-dam --accept true', user='nuxeo')
-
     # This requires manual connect registration for now
     if hotfix:
         sudocmd(nuxeoctl + ' mp-hotfix --accept=true', user='nuxeo')
 
     # Deploy marketplace packages directly sent by the controller
     for package in marketplace_packages:
-        pflush('Installing custom marketplace package ' + package)
-        sudocmd(nuxeoctl + ' mp-install --accept=true file://'
-            + os.path.abspath(package), user='nuxeo')
+        if os.path.exists(package):
+            pflush('Installing custom marketplace package ' + package)
+            sudocmd(nuxeoctl + ' mp-install --accept=true file://'
+                + os.path.abspath(package), user='nuxeo')
+        else:
+            # Assume a locally installed package name such as nuxeo-dam
+            # or nuxeo-dm for instance
+            pflush('Installing generic marketplace package ' + package)
+            sudocmd(nuxeoctl + ' mp-install --accept=true '
+                + package, user='nuxeo')
 
     # Restarting nuxeo
     cmd('service nuxeo start')

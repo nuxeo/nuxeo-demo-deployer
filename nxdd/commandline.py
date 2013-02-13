@@ -167,11 +167,15 @@ def main(argv=sys.argv[1:]):
                     % (options.user, options.user, WORKING_DIR))
 
     # Upload packages if any
-    package_filenames = []
+    package_names = []
     for package_local_path in options.packages:
-        package_filename = os.path.basename(package_local_path)
-        package_filenames.append(package_filename)
-        ctl.put(package_local_path, WORKING_DIR + package_filename)
+        if os.path.exists(package_local_path):
+            package_filename = os.path.basename(package_local_path)
+            package_names.append(package_filename)
+            ctl.put(package_local_path, WORKING_DIR + package_filename)
+        else:
+            # Assume a preinstalled package name such as 'nuxeo-dm'
+            package_names.append(package_local_path)
 
     # Deploy Nuxeo Connect instance credentials
     if options.instance_clid is not None:
@@ -191,7 +195,7 @@ def main(argv=sys.argv[1:]):
             deployment_script = deployment_script[:-len('.pyc')] + '.py'
 
     ctl.exec_script(deployment_script,
-                    sudo=True, arguments=" ".join(package_filenames),
+                    sudo=True, arguments=" ".join(package_names),
                     working_directory=WORKING_DIR)
     duration = time.time() - tick
     print("Successfully deployed demo at: http://%s/ in %dmin %ds" %
