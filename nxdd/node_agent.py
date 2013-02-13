@@ -2,6 +2,7 @@
 """Stand alone Python script to be executed on the instance to set it up."""
 from __future__ import print_function
 
+import json
 import socket
 import sys
 import os
@@ -113,9 +114,10 @@ def setconfig(filepath, param, value):
 
 
 def check_install_nuxeo(upgrade=False,
-						distribution="precise releases",
-    					apt_url="http://apt.nuxeo.org/",
-						key_url="http://apt.nuxeo.org/nuxeo.key"):
+                        distribution="precise releases",
+                        apt_url="http://apt.nuxeo.org/",
+                        key_url="http://apt.nuxeo.org/nuxeo.key",
+                        **ignored):
     """Check that Nuxeo is installed from the latest datebased release"""
 
     # Ensure the datebased release repo is configured and up to date
@@ -143,7 +145,7 @@ def check_install_nuxeo(upgrade=False,
     cmd("export DEBIAN_FRONTEND=noninteractive; "
                 "apt-get install -y nuxeo")
 
-def setup_nuxeo(marketplace_packages=(), hotfix=True):
+def setup_nuxeo(marketplace_packages=(), **ignored):
     pflush('Configuring Nuxeo server for the demo')
 
     # Skip wizard
@@ -176,7 +178,7 @@ def setup_nuxeo(marketplace_packages=(), hotfix=True):
     sudocmd(nuxeoctl + ' mp-update', user='nuxeo')
 
     # This requires manual connect registration for now
-    if hotfix:
+    if os.path.exists('instance.clid') and parameters.get('hotfix', True):
         sudocmd(nuxeoctl + ' mp-hotfix --accept=true', user='nuxeo')
 
     # Deploy marketplace packages directly sent by the controller
@@ -195,7 +197,7 @@ def setup_nuxeo(marketplace_packages=(), hotfix=True):
     # Restarting nuxeo
     cmd('service nuxeo start')
 
-def check_install_vhost():
+def check_install_vhost(**ignored):
     cmd("apt-get install -y apache2")
     filename = '/etc/apache2/sites-available/nuxeo'
     if not os.path.exists(filename):
@@ -209,6 +211,7 @@ def check_install_vhost():
 
 
 if __name__ == "__main__":
-    check_install_nuxeo()
-    setup_nuxeo(sys.argv[1:])
-    check_install_vhost()
+    parameters = json.load(sys.argv[1])
+    check_install_nuxeo(**parameters)
+    setup_nuxeo(**parameters)
+    check_install_vhost(**parameters)

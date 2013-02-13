@@ -23,6 +23,7 @@ import time
 import sys
 import argparse
 import json
+import tempfile
 
 from nxdd.controller import Controller
 
@@ -194,8 +195,23 @@ def main(argv=sys.argv[1:]):
         if deployment_script.endswith('.pyc'):
             deployment_script = deployment_script[:-len('.pyc')] + '.py'
 
+    parameters = dict(
+        distribution=options.description,
+        marketplace_packages=package_names,
+    )
+    try:
+        fd, params_filepath = tempfile.mkstemp(
+            prefix='demo-deployer-params-', suffix='.json')
+        os.close(fd)
+        with open(params_filepath, 'wb') as f:
+            json.dump(parameters, f)
+        params_filename = os.path.basename(params_filepath)
+        ctl.put(params_filepath, WORKING_DIR + params_filename)
+    finally:
+        os.unlink(params_filepath)
+
     ctl.exec_script(deployment_script,
-                    sudo=True, arguments=" ".join(package_names),
+                    sudo=True, arguments=params_filename,
                     working_directory=WORKING_DIR)
     duration = time.time() - tick
     print("Successfully deployed demo at: http://%s/ in %dmin %ds" %
