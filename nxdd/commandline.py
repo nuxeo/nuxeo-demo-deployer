@@ -196,7 +196,7 @@ def main(argv=sys.argv[1:]):
             deployment_script = deployment_script[:-len('.pyc')] + '.py'
 
     parameters = dict(
-        distribution=options.description,
+        distribution=options.nuxeo_distribution,
         marketplace_packages=package_names,
     )
     try:
